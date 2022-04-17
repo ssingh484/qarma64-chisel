@@ -7,7 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 //Qarma64 basic tester
 
 /*
-//tester for permute_tweak  
+//tester for permute_tweak
 class PermuteTweakTest extends AnyFlatSpec with ChiselScalatestTester{
     behavior of "PermuteTweak"
     it should "Permute the hex digits of a tweak" in {
@@ -17,7 +17,7 @@ class PermuteTweakTest extends AnyFlatSpec with ChiselScalatestTester{
            // c.clock.step()
             c.io.permuted_tweak.expect("hc66cbe54f0c634e9".U)
             //println("Last Output value :" + c.io.cipher.peek().litValue)
-            
+
         }
     }
 }
@@ -37,7 +37,7 @@ class PermuteStateTest extends AnyFlatSpec with ChiselScalatestTester{
             c.clock.step()
             c.io.permuted_state.expect("hb6cec35f966ec440".U)
             //println("Last Output value :" + c.io.cipher.peek().litValue)
-            
+
         }
     }
 }
@@ -51,7 +51,7 @@ class TweakLFSRTest extends AnyFlatSpec with ChiselScalatestTester{
             c.clock.step()
             c.io.lfsr.expect("h5f52b6cf14ec066c".U)
             //println("Last Output value :" + c.io.cipher.peek().litValue)
-            
+
         }
     }
 }
@@ -69,7 +69,7 @@ class CalcTweakTest extends AnyFlatSpec with ChiselScalatestTester{
             //c.clock.step()
             c.io.tweak_r.expect("h6a0a772dab3a691e".U)
             //println("Last Output value :" + c.io.cipher.peek().litValue)
-            
+
         }
     }
 }
@@ -82,7 +82,7 @@ class CalcRoundTweakeyTest extends AnyFlatSpec with ChiselScalatestTester{
             c.io.k0.poke("hec2802d4e0a488e9".U)
             c.io.backwards.poke(false.B)
 
-            for (i <- 0 until 1) 
+            for (i <- 0 until 1)
             {
                c.clock.step()
             }
@@ -91,7 +91,7 @@ class CalcRoundTweakeyTest extends AnyFlatSpec with ChiselScalatestTester{
             c.io.tweak.poke("hBE5466CF34E90C6C".U)
             c.io.k0.poke("hec2802d4e0a488e9".U)
             c.io.backwards.poke(true.B)
-            for (i <- 0 until 1) 
+            for (i <- 0 until 1)
             {
                c.clock.step()
             }
@@ -108,16 +108,16 @@ class RoundTest extends AnyFlatSpec with ChiselScalatestTester{
             c.io.state.poke("hBE5466CF34E90C6C".U)
             c.io.tweakey.poke("h477d469dec0b8762".U)
             c.io.backwards.poke(false.B)
-            for (i <- 0 until 2) 
+            for (i <- 0 until 2)
             {
                c.clock.step()
             }
-            c.io.round_state.expect("h0b8b9d7955f19279".U) 
+            c.io.round_state.expect("h0b8b9d7955f19279".U)
 
             c.io.state.poke("hBE5466CF34E90C6C".U)
             c.io.tweakey.poke("h477d469dec0b8762".U)
             c.io.backwards.poke(true.B)
-            for (i <- 0 until 2) 
+            for (i <- 0 until 2)
             {
                c.clock.step()
             }
@@ -132,7 +132,7 @@ class MiddleRoundTest extends AnyFlatSpec with ChiselScalatestTester{
         test(new MiddleRound()){c =>
             c.io.state.poke("hbe5466cf34e90c6c".U)
             c.io.k1.poke("hec2802d4e0a488e9".U)
-            for (i <- 0 until 2) 
+            for (i <- 0 until 2)
             {
                c.clock.step()
             }
@@ -151,7 +151,7 @@ class Qarma64Test extends AnyFlatSpec with ChiselScalatestTester{
             c.io.w0.poke("h84be85ce9804e94b".U)
             c.io.k0.poke("hec2802d4e0a488e9".U)
             c.io.encryption.poke(true.B)
-            for (i <- 0 until 17) 
+            for (i <- 0 until 16) 
             {
                c.clock.step()
             }
@@ -174,7 +174,7 @@ class CalcTweakTest_0Rounds extends AnyFlatSpec with ChiselScalatestTester{
             //c.clock.step()
             c.io.tweak_r.expect("h6a0a772dab3a691e".U)
             //println("Last Output value :" + c.io.cipher.peek().litValue)
-            
+
         }
     }
 }
@@ -187,7 +187,7 @@ class CalcRoundTweakeyTest_5rounds extends AnyFlatSpec with ChiselScalatestTeste
             c.io.k0.poke("h527c641bd44d8485".U)
             c.io.backwards.poke(false.B)
 
-            for (i <- 0 until 1) 
+            for (i <- 0 until 1)
             {
                c.clock.step()
             }
@@ -196,7 +196,7 @@ class CalcRoundTweakeyTest_5rounds extends AnyFlatSpec with ChiselScalatestTeste
             c.io.tweak.poke("hBE5466CF34E90C6C".U)
             c.io.k0.poke("h527c641bd44d8485".U)
             c.io.backwards.poke(true.B)
-            for (i <- 0 until 1) 
+            for (i <- 0 until 1)
             {
                c.clock.step()
             }
@@ -212,16 +212,16 @@ class RoundTest extends AnyFlatSpec with ChiselScalatestTester{
             c.io.state.poke("hBE5466CF34E90C6C".U)
             c.io.tweakey.poke("h527c641bd44d8485".U)
             c.io.backwards.poke(false.B)
-            for (i <- 0 until 2) 
+            for (i <- 0 until 2)
             {
                c.clock.step()
             }
-            c.io.round_state.expect("h1d2602c910396614".U) 
+            c.io.round_state.expect("h1d2602c910396614".U)
 
         c.io.state.poke("hBE5466CF34E90C6C".U)
             c.io.tweakey.poke("h527c641bd44d8485".U)
             c.io.backwards.poke(true.B)
-            for (i <- 0 until 2) 
+            for (i <- 0 until 2)
             {
                c.clock.step()
             }
@@ -235,15 +235,15 @@ class MixColumnsTest extends AnyFlatSpec with ChiselScalatestTester{
     it should "Mix each column in a set manner" in {
         test(new qarma64.MixColumns){c =>
             c.io.state.poke("hbe5466cf34e90c6c".U)
-            
+
             for (i <- 0 until 4) // 4 clock cycles
             {
                c.clock.step()
             }
-            
+
             c.io.mixed_state.expect("h04e016e82e078c44".U)
             //println("Last Output value :" + c.io.cipher.peek().litValue)
-            
+
         }
     }
 }*/
