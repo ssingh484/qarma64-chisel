@@ -1529,8 +1529,7 @@ val io = IO(new Bundle {
     val mixcolumns_block_2 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
     val subbytes_block_1 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
     val subbytes_block_2 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
-    val return_block_1 = RegInit(VecInit(Seq.fill(16)(0.U(64.W))))
-    val return_block_2 = RegInit(VecInit(Seq.fill(16)(0.U(64.W))))
+    val return_block = RegInit(VecInit(Seq.fill(16)(0.U(64.W))))
 
 
     val incol_0_0 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
