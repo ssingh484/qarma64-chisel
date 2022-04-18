@@ -144,18 +144,74 @@ class MiddleRoundTest extends AnyFlatSpec with ChiselScalatestTester{
 
 class Qarma64Test extends AnyFlatSpec with ChiselScalatestTester{
     behavior of "Qarma64"
-    it should "Full qarma64 implementation with 5 rounds" in {
+    it should "Full qarma64 implementation with 5 rounds using plaintext fb623599da6e8127 and tweak 477d469dec0b8762" in {
         test(new Qarma64()){c =>
             c.io.plaintext.poke("hfb623599da6e8127".U)
             c.io.tweak.poke("h477d469dec0b8762".U)
             c.io.w0.poke("h84be85ce9804e94b".U)
             c.io.k0.poke("hec2802d4e0a488e9".U)
             c.io.encryption.poke(true.B)
-            for (i <- 0 until 2) 
+            for (i <- 0 until 2)
             {
                c.clock.step()
             }
             c.io.ciphertext.expect("h3ee99a6c82af0c38".U)
+        }
+    }
+    it should "Full qarma64 implementation with 5 rounds using plaintext fb112809da6e8127 and tweak 477d469dec0b8762" in {
+        test(new Qarma64()){c =>
+            c.io.plaintext.poke("hfb112809da6e8127".U)
+            c.io.tweak.poke("h477d469dec0b8762".U)
+            c.io.w0.poke("h84be85ce9804e94b".U)
+            c.io.k0.poke("hec2802d4e0a488e9".U)
+            c.io.encryption.poke(true.B)
+            for (i <- 0 until 2)
+            {
+               c.clock.step()
+            }
+            c.io.ciphertext.expect("hc26ebceccb9b6e3d".U)
+        }
+    }
+    it should "Full qarma64 implementation with 5 rounds using plaintext fb623599da611280 and tweak 477d469dec0b8762" in {
+        test(new Qarma64()){c =>
+            c.io.plaintext.poke("hfb623599da611280".U)
+            c.io.tweak.poke("h477d469dec0b8762".U)
+            c.io.w0.poke("h84be85ce9804e94b".U)
+            c.io.k0.poke("hec2802d4e0a488e9".U)
+            c.io.encryption.poke(true.B)
+            for (i <- 0 until 2)
+            {
+               c.clock.step()
+            }
+            c.io.ciphertext.expect("h6b21eb8883a8b1aa".U)
+        }
+    }
+    it should "Full qarma64 implementation with 5 rounds using plaintext fb623599da6e8127 and tweak 4711280dec0b8762" in {
+        test(new Qarma64()){c =>
+            c.io.plaintext.poke("hfb623599da6e8127".U)
+            c.io.tweak.poke("h4711280dec0b8762".U)
+            c.io.w0.poke("h84be85ce9804e94b".U)
+            c.io.k0.poke("hec2802d4e0a488e9".U)
+            c.io.encryption.poke(true.B)
+            for (i <- 0 until 2)
+            {
+               c.clock.step()
+            }
+            c.io.ciphertext.expect("hdd4c533af8ddfb77".U)
+        }
+    }
+        test(new Qarma64()){c =>
+          it should "Full qarma64 implementation with 5 rounds using plaintext fb623599da6e8127 and tweak 477d469dec011280" in {
+            c.io.plaintext.poke("hfb623599da6e8127".U)
+            c.io.tweak.poke("h477d469dec011280".U)
+            c.io.w0.poke("h84be85ce9804e94b".U)
+            c.io.k0.poke("hec2802d4e0a488e9".U)
+            c.io.encryption.poke(true.B)
+            for (i <- 0 until 2)
+            {
+               c.clock.step()
+            }
+            c.io.ciphertext.expect("hf5134e936f5c078d".U)
         }
     }
 }
