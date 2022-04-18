@@ -200,7 +200,7 @@ class Qarma64Test extends AnyFlatSpec with ChiselScalatestTester{
             c.io.ciphertext.expect("hdd4c533af8ddfb77".U)
         }
     }
-    it should "Full qarma64 implementation with 5 rounds using plaintext fb623599da6e8127 and tweak 4711280dec0b8762" in {
+    it should "Full qarma64 implementation with 5 rounds using plaintext fb623599da6e8127 and tweak 477d469dec011280" in {
         test(new Qarma64()){c =>
             c.io.plaintext.poke("hfb623599da6e8127".U)
             c.io.tweak.poke("h477d469dec011280".U)
