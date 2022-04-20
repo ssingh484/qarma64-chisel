@@ -2128,6 +2128,9 @@ val io = IO(new Bundle {
     val outcol_0_2 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
     val outcol_0_3 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
 
+    val interim_state_reg1 = RegInit(0.U(64.W))
+    val interim_state_reg2 = RegInit(0.U(64.W))
+
     for (j <- 0 to 15) //hex to block
     {
         block_plaintext(15-j) := ((io.plaintext & ("hF".U << j*4)) >> j*4)
@@ -2309,13 +2312,16 @@ val io = IO(new Bundle {
     module_Round_rounds3_0.io.backwards := false.B
     //printf(p"round 4: ${Hexadecimal(module_Round_rounds3_0.io.round_state)}\n")
 
+    interim_state_reg1 := module_Round_rounds3_0.io.round_state
+
     //loop iteration 5
     module_CalcRoundTweakey_rounds4_0.io.tweak := io.tweak
     module_CalcRoundTweakey_rounds4_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
     module_CalcRoundTweakey_rounds4_0.io.backwards := false.B
     //printf(p"tweakey 5: ${Hexadecimal(module_CalcRoundTweakey_rounds4_0.io.output)}\n")
 
-    module_Round_rounds4_0.io.state := module_Round_rounds3_0.io.round_state
+    // module_Round_rounds4_0.io.state := module_Round_rounds3_0.io.round_state
+    module_Round_rounds4_0.io.state := interim_state_reg1
     module_Round_rounds4_0.io.tweakey := module_CalcRoundTweakey_rounds4_0.io.output
     module_Round_rounds4_0.io.backwards := false.B
     //printf(p"round 5: ${Hexadecimal(module_Round_rounds4_0.io.round_state)}\n")
@@ -2384,12 +2390,15 @@ val io = IO(new Bundle {
     module_Round_rounds2_1.io.tweakey := module_CalcRoundTweakey_rounds2_1.io.output
     module_Round_rounds2_1.io.backwards := true.B
 
+    interim_state_reg2 := module_Round_rounds2_1.io.round_state
+
     //loop iteration 2
     module_CalcRoundTweakey_rounds1_1.io.tweak := io.tweak
     module_CalcRoundTweakey_rounds1_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
     module_CalcRoundTweakey_rounds1_1.io.backwards := true.B
 
-    module_Round_rounds1_1.io.state := module_Round_rounds2_1.io.round_state
+    // module_Round_rounds1_1.io.state := module_Round_rounds2_1.io.round_state
+    module_Round_rounds1_1.io.state := interim_state_reg2
     module_Round_rounds1_1.io.tweakey := module_CalcRoundTweakey_rounds1_1.io.output
     module_Round_rounds1_1.io.backwards := true.B
 
