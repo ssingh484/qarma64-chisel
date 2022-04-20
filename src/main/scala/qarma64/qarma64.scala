@@ -1962,14 +1962,14 @@ val io = IO(new Bundle {
     val permuted_state_true_block = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
 
 
-    val incol_0_0 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
-    val incol_0_1 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
-    val incol_0_2 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
-    val incol_0_3 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
-    val outcol_0_0 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
-    val outcol_0_1 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
-    val outcol_0_2 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
-    val outcol_0_3 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val incol_0_0 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val incol_0_1 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val incol_0_2 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val incol_0_3 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val outcol_0_0 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val outcol_0_1 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val outcol_0_2 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
+    val outcol_0_3 = WireInit(VecInit(Seq.fill(4)(0.U(64.W))))
 
 
     for (j <- 0 to 15) //hex to block
