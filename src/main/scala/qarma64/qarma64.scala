@@ -2152,7 +2152,7 @@ val io = IO(new Bundle {
     tweak_in := io.tweak
     w0_in := io.w0
     k0_in := io.k0
-    encryption_in := io.encryption.bits
+    encryption_in := io.encryption
     w1 := ((io.w0 >> 1) | ((io.w0 & 1.U(64.W)) << 63)) ^ (io.w0 >> 63)
 
     for (j <- 0 to 15) //hex to block
@@ -2167,7 +2167,7 @@ val io = IO(new Bundle {
     //printf(p"block_w0:$block_w0\n block_w1:$block_w1\n block_k0:$block_k0\n block_plaintext:$block_plaintext\n block_tweak:$block_tweak\n")
     //we're good so far. starts from if encryption from here
 
-    when(Bool(encryption_in))
+    when(encryption_in)
     {
         block_k1 := block_k0
         block_k0_1 := block_k0
