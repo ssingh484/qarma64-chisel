@@ -2112,7 +2112,7 @@ val io = IO(new Bundle {
     val w0_in = RegInit(0.U(64.W))
     val k0_in = RegInit(0.U(64.W))
     val encryption_in = RegInit(0.U(1.W))
-    val w1 = RegInit(UInt(64.W))
+    val w1 = RegInit(0.U(64.W))
 
     val alpha_block = RegInit(VecInit(12.U(64.W), 0.U(64.W), 10.U(64.W), 12.U(64.W), 2.U(64.W), 9.U(64.W), 11.U(64.W), 7.U(64.W), 12.U(64.W), 9.U(64.W), 7.U(64.W), 12.U(64.W), 5.U(64.W), 0.U(64.W), 13.U(64.W), 13.U(64.W)))
 
@@ -2139,14 +2139,14 @@ val io = IO(new Bundle {
     val output_reg = RegInit(0.U(64.W))
 
     val tweak_in_stage2 = RegInit(0.U(64.W))
-    val k0_stage2 = RegInit(UInt(64.W))
-    val k1_stage2 = RegInit(UInt(64.W))
-    val w0_stage2 = RegInit(UInt(64.W))
-    val w1_stage2 = RegInit(UInt(64.W))
+    val k0_stage2 = RegInit(0.U(64.W))
+    val k1_stage2 = RegInit(0.U(64.W))
+    val w0_stage2 = RegInit(0.U(64.W))
+    val w1_stage2 = RegInit(0.U(64.W))
 
     val tweak_in_stage3 = RegInit(0.U(64.W))
-    val k0_stage3 = RegInit(UInt(64.W))
-    val w1_stage3 = RegInit(UInt(64.W))
+    val k0_stage3 = RegInit(0.U(64.W))
+    val w1_stage3 = RegInit(0.U(64.W))
 
     plaintext_in := io.plaintext
     tweak_in := io.tweak
