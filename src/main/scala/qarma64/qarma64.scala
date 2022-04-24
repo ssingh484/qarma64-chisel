@@ -2111,7 +2111,7 @@ val io = IO(new Bundle {
     val tweak_in = RegInit(0.U(64.W))
     val w0_in = RegInit(0.U(64.W))
     val k0_in = RegInit(0.U(64.W))
-    val encryption_in = RegInit(Bool())
+    val encryption_in = RegInit(0.U(1.W))
     val w1 = RegInit(UInt(64.W))
 
     val alpha_block = RegInit(VecInit(12.U(64.W), 0.U(64.W), 10.U(64.W), 12.U(64.W), 2.U(64.W), 9.U(64.W), 11.U(64.W), 7.U(64.W), 12.U(64.W), 9.U(64.W), 7.U(64.W), 12.U(64.W), 5.U(64.W), 0.U(64.W), 13.U(64.W), 13.U(64.W)))
@@ -2152,7 +2152,7 @@ val io = IO(new Bundle {
     tweak_in := io.tweak
     w0_in := io.w0
     k0_in := io.k0
-    encryption_in := io.encryption
+    encryption_in := io.encryption.bits
     w1 := ((io.w0 >> 1) | ((io.w0 & 1.U(64.W)) << 63)) ^ (io.w0 >> 63)
 
     for (j <- 0 to 15) //hex to block
@@ -2167,7 +2167,7 @@ val io = IO(new Bundle {
     //printf(p"block_w0:$block_w0\n block_w1:$block_w1\n block_k0:$block_k0\n block_plaintext:$block_plaintext\n block_tweak:$block_tweak\n")
     //we're good so far. starts from if encryption from here
 
-    when(encryption_in)
+    when(Bool(encryption_in))
     {
         block_k1 := block_k0
         block_k0_1 := block_k0
