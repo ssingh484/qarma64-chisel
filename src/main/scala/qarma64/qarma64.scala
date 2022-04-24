@@ -2106,9 +2106,15 @@ val io = IO(new Bundle {
     val ciphertext = Output(UInt(64.W))
 
   }) //input bundle ends here
+
+    val plaintext_in = RegInit(0.U(64.W))
+    val tweak_in = RegInit(0.U(64.W))
+    val w0_in = RegInit(0.U(64.W))
+    val k0_in = RegInit(0.U(64.W))
+    val encryption_in = RegInit(0.U(64.W))
+    val w1 = RegInit(UInt(64.W))
+
     val alpha_block = RegInit(VecInit(12.U(64.W), 0.U(64.W), 10.U(64.W), 12.U(64.W), 2.U(64.W), 9.U(64.W), 11.U(64.W), 7.U(64.W), 12.U(64.W), 9.U(64.W), 7.U(64.W), 12.U(64.W), 5.U(64.W), 0.U(64.W), 13.U(64.W), 13.U(64.W)))
-    val w1 = Wire(UInt(64.W))
-    w1 := ((io.w0 >> 1) | ((io.w0 & 1.U(64.W)) << 63)) ^ (io.w0 >> 63)
 
     val block_plaintext = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
     val block_tweak = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
@@ -2128,22 +2134,40 @@ val io = IO(new Bundle {
     val outcol_0_2 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
     val outcol_0_3 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
 
-    val interim_state_reg1 = RegInit(0.U(64.W))
-    val interim_state_reg2 = RegInit(0.U(64.W))
+    val stage2_reg = RegInit(0.U(64.W))
+    val stage3_reg = RegInit(0.U(64.W))
+    val output_reg = RegInit(0.U(64.W))
+
+    val tweak_in_stage2 = RegInit(0.U(64.W))
+    val k0_stage2 = RegInit(UInt(64.W))
+    val k1_stage2 = RegInit(UInt(64.W))
+    val w0_stage2 = RegInit(UInt(64.W))
+    val w1_stage2 = RegInit(UInt(64.W))
+
+    val tweak_in_stage3 = RegInit(0.U(64.W))
+    val k0_stage3 = RegInit(UInt(64.W))
+    val w1_stage3 = RegInit(UInt(64.W))
+
+    plaintext_in := io.plaintext
+    tweak_in := io.tweak
+    w0_in := io.w0
+    k0_in := io.k0
+    encryption_in := io.encryption
+    w1 := ((io.w0 >> 1) | ((io.w0 & 1.U(64.W)) << 63)) ^ (io.w0 >> 63)
 
     for (j <- 0 to 15) //hex to block
     {
-        block_plaintext(15-j) := ((io.plaintext & ("hF".U << j*4)) >> j*4)
-        block_tweak(15-j) := ((io.tweak & ("hF".U << j*4)) >> j*4)
-        block_w0(15-j) := ((io.w0 & ("hF".U << j*4)) >> j*4)
+        block_plaintext(15-j) := ((plaintext_in & ("hF".U << j*4)) >> j*4)
+        block_tweak(15-j) := ((tweak_in & ("hF".U << j*4)) >> j*4)
+        block_w0(15-j) := ((w0_in & ("hF".U << j*4)) >> j*4)
         block_w1(15-j) := ((w1 & ("hF".U << j*4)) >> j*4)
-        block_k0(15-j) := ((io.k0 & ("hF".U << j*4)) >> j*4)
+        block_k0(15-j) := ((k0_in & ("hF".U << j*4)) >> j*4)
     }
 
     //printf(p"block_w0:$block_w0\n block_w1:$block_w1\n block_k0:$block_k0\n block_plaintext:$block_plaintext\n block_tweak:$block_tweak\n")
     //we're good so far. starts from if encryption from here
 
-    when(io.encryption)
+    when(encryption_in)
     {
         block_k1 := block_k0
         block_k0_1 := block_k0
@@ -2154,7 +2178,7 @@ val io = IO(new Bundle {
       {
 
           block_w0(15-j) := ((w1 & ("hF".U << j*4)) >> j*4)
-          block_w1(15-j) := ((io.w0 & ("hF".U << j*4)) >> j*4)
+          block_w1(15-j) := ((w0_in & ("hF".U << j*4)) >> j*4)
           //printf(p"############# Code was executed\n")
       }
 
@@ -2269,7 +2293,7 @@ val io = IO(new Bundle {
     val module_Round_rounds4_0 = Module(new Round())
 
     // loop iteration 1
-    module_CalcRoundTweakey_rounds0_0.io.tweak := io.tweak
+    module_CalcRoundTweakey_rounds0_0.io.tweak := tweak_in
     module_CalcRoundTweakey_rounds0_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
     module_CalcRoundTweakey_rounds0_0.io.backwards := false.B
     //printf(p"tweakey 1: ${Hexadecimal(module_CalcRoundTweakey_rounds0_0.io.output)}\n")
@@ -2280,7 +2304,7 @@ val io = IO(new Bundle {
     //printf(p"round 1: ${Hexadecimal(module_Round_rounds0_0.io.round_state)}\n")
 
     //loop iteration 2
-    module_CalcRoundTweakey_rounds1_0.io.tweak := io.tweak
+    module_CalcRoundTweakey_rounds1_0.io.tweak := tweak_in
     module_CalcRoundTweakey_rounds1_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
     module_CalcRoundTweakey_rounds1_0.io.backwards := false.B
     //printf(p"tweakey 2: ${Hexadecimal(module_CalcRoundTweakey_rounds1_0.io.output)}\n")
@@ -2291,7 +2315,7 @@ val io = IO(new Bundle {
     //printf(p"round 2: ${Hexadecimal(module_Round_rounds1_0.io.round_state)}\n")
 
     //loop iteration 3
-    module_CalcRoundTweakey_rounds2_0.io.tweak := io.tweak
+    module_CalcRoundTweakey_rounds2_0.io.tweak := tweak_in
     module_CalcRoundTweakey_rounds2_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
     module_CalcRoundTweakey_rounds2_0.io.backwards := false.B
     //printf(p"tweakey 3: ${Hexadecimal(module_CalcRoundTweakey_rounds2_0.io.output)}\n")
@@ -2302,7 +2326,7 @@ val io = IO(new Bundle {
     //printf(p"round 3: ${Hexadecimal(module_Round_rounds2_0.io.round_state)}\n")
 
     //loop iteration 4
-    module_CalcRoundTweakey_rounds3_0.io.tweak := io.tweak
+    module_CalcRoundTweakey_rounds3_0.io.tweak := tweak_in
     module_CalcRoundTweakey_rounds3_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
     module_CalcRoundTweakey_rounds3_0.io.backwards := false.B
     //printf(p"tweakey 4: ${Hexadecimal(module_CalcRoundTweakey_rounds3_0.io.output)}\n")
@@ -2312,16 +2336,21 @@ val io = IO(new Bundle {
     module_Round_rounds3_0.io.backwards := false.B
     //printf(p"round 4: ${Hexadecimal(module_Round_rounds3_0.io.round_state)}\n")
 
-    interim_state_reg1 := module_Round_rounds3_0.io.round_state
+    stage2_reg := module_Round_rounds3_0.io.round_state
+    k0_stage2 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+    k1_stage2 := (block_k1(0) << (15-0)*4) + (block_k1(1) << (15-1)*4) + (block_k1(2) << (15-2)*4) + (block_k1(3) << (15-3)*4) + (block_k1(4) << (15-4)*4) + (block_k1(5) << (15-5)*4) + (block_k1(6) << (15-6)*4) + (block_k1(7) << (15-7)*4) + (block_k1(8) << (15-8)*4) + (block_k1(9) << (15-9)*4) + (block_k1(10) << (15-10)*4) + (block_k1(11) << (15-11)*4) + (block_k1(12) << (15-12)*4) + (block_k1(13) << (15-13)*4) + (block_k1(14) << (15-14)*4) + (block_k1(15) << (15-15)*4)
+    w0_stage2 := ((block_w0(0) << (15-0)*4) + (block_w0(1) << (15-1)*4) + (block_w0(2) << (15-2)*4) + (block_w0(3) << (15-3)*4) + (block_w0(4) << (15-4)*4) + (block_w0(5) << (15-5)*4) + (block_w0(6) << (15-6)*4) + (block_w0(7) << (15-7)*4) + (block_w0(8) << (15-8)*4) + (block_w0(9) << (15-9)*4) + (block_w0(10) << (15-10)*4) + (block_w0(11) << (15-11)*4) + (block_w0(12) << (15-12)*4) + (block_w0(13) << (15-13)*4) + (block_w0(14) << (15-14)*4) + (block_w0(15) << (15-15)*4))
+    w1_stage2 := ((block_w1(0) << (15-0)*4) + (block_w1(1) << (15-1)*4) + (block_w1(2) << (15-2)*4) + (block_w1(3) << (15-3)*4) + (block_w1(4) << (15-4)*4) + (block_w1(5) << (15-5)*4) + (block_w1(6) << (15-6)*4) + (block_w1(7) << (15-7)*4) + (block_w1(8) << (15-8)*4) + (block_w1(9) << (15-9)*4) + (block_w1(10) << (15-10)*4) + (block_w1(11) << (15-11)*4) + (block_w1(12) << (15-12)*4) + (block_w1(13) << (15-13)*4) + (block_w1(14) << (15-14)*4) + (block_w1(15) << (15-15)*4))
+    tweak_in_stage2 := tweak_in
 
     //loop iteration 5
-    module_CalcRoundTweakey_rounds4_0.io.tweak := io.tweak
-    module_CalcRoundTweakey_rounds4_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+    module_CalcRoundTweakey_rounds4_0.io.tweak := tweak_in_stage2
+    module_CalcRoundTweakey_rounds4_0.io.k0 := k0_stage2
     module_CalcRoundTweakey_rounds4_0.io.backwards := false.B
     //printf(p"tweakey 5: ${Hexadecimal(module_CalcRoundTweakey_rounds4_0.io.output)}\n")
 
     // module_Round_rounds4_0.io.state := module_Round_rounds3_0.io.round_state
-    module_Round_rounds4_0.io.state := interim_state_reg1
+    module_Round_rounds4_0.io.state := stage2_reg
     module_Round_rounds4_0.io.tweakey := module_CalcRoundTweakey_rounds4_0.io.output
     module_Round_rounds4_0.io.backwards := false.B
     //printf(p"round 5: ${Hexadecimal(module_Round_rounds4_0.io.round_state)}\n")
@@ -2335,18 +2364,18 @@ val io = IO(new Bundle {
     val module_Round_middle_1 = Module(new Round())
 
 
-    module_CalcTweak_middle.io.tweak :=  io.tweak
+    module_CalcTweak_middle.io.tweak :=  tweak_in_stage2
 
 
     module_Round_middle_0.io.state := module_Round_rounds4_0.io.round_state
-    module_Round_middle_0.io.tweakey := module_CalcTweak_middle.io.tweak_r ^ ((block_w1(0) << (15-0)*4) + (block_w1(1) << (15-1)*4) + (block_w1(2) << (15-2)*4) + (block_w1(3) << (15-3)*4) + (block_w1(4) << (15-4)*4) + (block_w1(5) << (15-5)*4) + (block_w1(6) << (15-6)*4) + (block_w1(7) << (15-7)*4) + (block_w1(8) << (15-8)*4) + (block_w1(9) << (15-9)*4) + (block_w1(10) << (15-10)*4) + (block_w1(11) << (15-11)*4) + (block_w1(12) << (15-12)*4) + (block_w1(13) << (15-13)*4) + (block_w1(14) << (15-14)*4) + (block_w1(15) << (15-15)*4))
+    module_Round_middle_0.io.tweakey := module_CalcTweak_middle.io.tweak_r ^ w1_stage2
     module_Round_middle_0.io.backwards := false.B
 
     module_MiddleRound.io.state := module_Round_middle_0.io.round_state
-    module_MiddleRound.io.k1 := (block_k1(0) << (15-0)*4) + (block_k1(1) << (15-1)*4) + (block_k1(2) << (15-2)*4) + (block_k1(3) << (15-3)*4) + (block_k1(4) << (15-4)*4) + (block_k1(5) << (15-5)*4) + (block_k1(6) << (15-6)*4) + (block_k1(7) << (15-7)*4) + (block_k1(8) << (15-8)*4) + (block_k1(9) << (15-9)*4) + (block_k1(10) << (15-10)*4) + (block_k1(11) << (15-11)*4) + (block_k1(12) << (15-12)*4) + (block_k1(13) << (15-13)*4) + (block_k1(14) << (15-14)*4) + (block_k1(15) << (15-15)*4)
+    module_MiddleRound.io.k1 := k1_stage2
 
     module_Round_middle_1.io.state := module_MiddleRound.io.middleround_state
-    module_Round_middle_1.io.tweakey := module_CalcTweak_middle.io.tweak_r ^ ((block_w0(0) << (15-0)*4) + (block_w0(1) << (15-1)*4) + (block_w0(2) << (15-2)*4) + (block_w0(3) << (15-3)*4) + (block_w0(4) << (15-4)*4) + (block_w0(5) << (15-5)*4) + (block_w0(6) << (15-6)*4) + (block_w0(7) << (15-7)*4) + (block_w0(8) << (15-8)*4) + (block_w0(9) << (15-9)*4) + (block_w0(10) << (15-10)*4) + (block_w0(11) << (15-11)*4) + (block_w0(12) << (15-12)*4) + (block_w0(13) << (15-13)*4) + (block_w0(14) << (15-14)*4) + (block_w0(15) << (15-15)*4))
+    module_Round_middle_1.io.tweakey := module_CalcTweak_middle.io.tweak_r ^ w0_stage2
     module_Round_middle_1.io.backwards := true.B
 
     //inverted loop. starts from 5 and goes to 1
@@ -2364,8 +2393,8 @@ val io = IO(new Bundle {
     val module_Round_rounds4_1 = Module(new Round())
 
     // loop iteration 5
-    module_CalcRoundTweakey_rounds4_1.io.tweak := io.tweak
-    module_CalcRoundTweakey_rounds4_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+    module_CalcRoundTweakey_rounds4_1.io.tweak := tweak_in_stage2
+    module_CalcRoundTweakey_rounds4_1.io.k0 := k0_stage2
     module_CalcRoundTweakey_rounds4_1.io.backwards := true.B
 
     module_Round_rounds4_1.io.state := module_Round_middle_1.io.round_state
@@ -2373,8 +2402,8 @@ val io = IO(new Bundle {
     module_Round_rounds4_1.io.backwards := true.B
 
     //loop iteration 4
-    module_CalcRoundTweakey_rounds3_1.io.tweak := io.tweak
-    module_CalcRoundTweakey_rounds3_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+    module_CalcRoundTweakey_rounds3_1.io.tweak := tweak_in_stage2
+    module_CalcRoundTweakey_rounds3_1.io.k0 := k0_stage2
     module_CalcRoundTweakey_rounds3_1.io.backwards := true.B
 
     module_Round_rounds3_1.io.state := module_Round_rounds4_1.io.round_state
@@ -2382,29 +2411,32 @@ val io = IO(new Bundle {
     module_Round_rounds3_1.io.backwards := true.B
 
     //loop iteration 3
-    module_CalcRoundTweakey_rounds2_1.io.tweak := io.tweak
-    module_CalcRoundTweakey_rounds2_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+    module_CalcRoundTweakey_rounds2_1.io.tweak := tweak_in_stage2
+    module_CalcRoundTweakey_rounds2_1.io.k0 := k0_stage2
     module_CalcRoundTweakey_rounds2_1.io.backwards := true.B
 
     module_Round_rounds2_1.io.state := module_Round_rounds3_1.io.round_state
     module_Round_rounds2_1.io.tweakey := module_CalcRoundTweakey_rounds2_1.io.output
     module_Round_rounds2_1.io.backwards := true.B
 
-    interim_state_reg2 := module_Round_rounds2_1.io.round_state
+    stage3_reg := module_Round_rounds2_1.io.round_state
+    k0_stage3 := k0_stage2
+    w1_stage3 := w1_stage2
+    tweak_in_stage3 := tweak_in_stage2
 
     //loop iteration 2
-    module_CalcRoundTweakey_rounds1_1.io.tweak := io.tweak
-    module_CalcRoundTweakey_rounds1_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+    module_CalcRoundTweakey_rounds1_1.io.tweak := tweak_in_stage3
+    module_CalcRoundTweakey_rounds1_1.io.k0 := k0_stage3
     module_CalcRoundTweakey_rounds1_1.io.backwards := true.B
 
     // module_Round_rounds1_1.io.state := module_Round_rounds2_1.io.round_state
-    module_Round_rounds1_1.io.state := interim_state_reg2
+    module_Round_rounds1_1.io.state := stage3_reg
     module_Round_rounds1_1.io.tweakey := module_CalcRoundTweakey_rounds1_1.io.output
     module_Round_rounds1_1.io.backwards := true.B
 
     //loop iteration 1
-    module_CalcRoundTweakey_rounds0_1.io.tweak := io.tweak
-    module_CalcRoundTweakey_rounds0_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+    module_CalcRoundTweakey_rounds0_1.io.tweak := tweak_in_stage3
+    module_CalcRoundTweakey_rounds0_1.io.k0 := k0_stage3
     module_CalcRoundTweakey_rounds0_1.io.backwards := true.B
 
     module_Round_rounds0_1.io.state := module_Round_rounds1_1.io.round_state
@@ -2412,9 +2444,335 @@ val io = IO(new Bundle {
     module_Round_rounds0_1.io.backwards := true.B
 
 
-    io.ciphertext := module_Round_rounds0_1.io.round_state ^ ((block_w1(0) << (15-0)*4) + (block_w1(1) << (15-1)*4) + (block_w1(2) << (15-2)*4) + (block_w1(3) << (15-3)*4) + (block_w1(4) << (15-4)*4) + (block_w1(5) << (15-5)*4) + (block_w1(6) << (15-6)*4) + (block_w1(7) << (15-7)*4) + (block_w1(8) << (15-8)*4) + (block_w1(9) << (15-9)*4) + (block_w1(10) << (15-10)*4) + (block_w1(11) << (15-11)*4) + (block_w1(12) << (15-12)*4) + (block_w1(13) << (15-13)*4) + (block_w1(14) << (15-14)*4) + (block_w1(15) << (15-15)*4))
+    output_reg := module_Round_rounds0_1.io.round_state ^ w1_stage3
+    io.ciphertext := output_reg
 
 
     //printf(p"block_w0_later:$block_w0\n block_w1_later:$block_w1\n")
     //io.ciphertext := RegNext(io.plaintext) //temporary just to check the module
 }
+// class Qarma64() extends Module{
+//
+// val io = IO(new Bundle {
+//     //Inputs
+//     val plaintext = Input(UInt(64.W))
+//     val tweak = Input(UInt(64.W))
+//     val w0 = Input(UInt(64.W))
+//     val k0 = Input(UInt(64.W)) //here the key is basically concatenation of w0 and k0. But to simplify we will be using them separately. You can break it up in the circuitry leading upto this module.
+//     val encryption = Input(Bool())
+//     //Outputs
+//     val ciphertext = Output(UInt(64.W))
+//
+//   }) //input bundle ends here
+//     val alpha_block = RegInit(VecInit(12.U(64.W), 0.U(64.W), 10.U(64.W), 12.U(64.W), 2.U(64.W), 9.U(64.W), 11.U(64.W), 7.U(64.W), 12.U(64.W), 9.U(64.W), 7.U(64.W), 12.U(64.W), 5.U(64.W), 0.U(64.W), 13.U(64.W), 13.U(64.W)))
+//     val w1 = Wire(UInt(64.W))
+//     w1 := ((io.w0 >> 1) | ((io.w0 & 1.U(64.W)) << 63)) ^ (io.w0 >> 63)
+//
+//     val block_plaintext = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//     val block_tweak = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//     val block_w0 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//     val block_w1 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//     val block_k0 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//     val block_k0_1 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//     val block_k1 = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//     val block_state = WireInit(VecInit(Seq.fill(16)(0.U(64.W))))
+//
+//     val incol_0_0 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//     val incol_0_1 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//     val incol_0_2 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//     val incol_0_3 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//     val outcol_0_0 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//     val outcol_0_1 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//     val outcol_0_2 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//     val outcol_0_3 = RegInit(VecInit(Seq.fill(4)(0.U(64.W))))
+//
+//     val interim_state_reg1 = RegInit(0.U(64.W))
+//     val interim_state_reg2 = RegInit(0.U(64.W))
+//
+//     for (j <- 0 to 15) //hex to block
+//     {
+//         block_plaintext(15-j) := ((io.plaintext & ("hF".U << j*4)) >> j*4)
+//         block_tweak(15-j) := ((io.tweak & ("hF".U << j*4)) >> j*4)
+//         block_w0(15-j) := ((io.w0 & ("hF".U << j*4)) >> j*4)
+//         block_w1(15-j) := ((w1 & ("hF".U << j*4)) >> j*4)
+//         block_k0(15-j) := ((io.k0 & ("hF".U << j*4)) >> j*4)
+//     }
+//
+//     //printf(p"block_w0:$block_w0\n block_w1:$block_w1\n block_k0:$block_k0\n block_plaintext:$block_plaintext\n block_tweak:$block_tweak\n")
+//     //we're good so far. starts from if encryption from here
+//
+//     when(io.encryption)
+//     {
+//         block_k1 := block_k0
+//         block_k0_1 := block_k0
+//     }
+//     .otherwise
+//     {
+//       for (j <- 0 to 15) //hex to block
+//       {
+//
+//           block_w0(15-j) := ((w1 & ("hF".U << j*4)) >> j*4)
+//           block_w1(15-j) := ((io.w0 & ("hF".U << j*4)) >> j*4)
+//           //printf(p"############# Code was executed\n")
+//       }
+//
+//       incol_0_0(0) := block_k0(0)
+//       incol_0_0(1) := block_k0(4)
+//       incol_0_0(2) := block_k0(8)
+//       incol_0_0(3) := block_k0(12)
+//
+//       incol_0_1(0) := block_k0(0+1)
+//       incol_0_1(1) := block_k0(4+1)
+//       incol_0_1(2) := block_k0(8+1)
+//       incol_0_1(3) := block_k0(12+1)
+//
+//       incol_0_2(0) := block_k0(0+2)
+//       incol_0_2(1) := block_k0(4+2)
+//       incol_0_2(2) := block_k0(8+2)
+//       incol_0_2(3) := block_k0(12+2)
+//
+//       incol_0_3(0) := block_k0(0+3)
+//       incol_0_3(1) := block_k0(4+3)
+//       incol_0_3(2) := block_k0(8+3)
+//       incol_0_3(3) := block_k0(12+3)
+//
+//       outcol_0_0(0) := (((incol_0_0(1) << 1) | (incol_0_0(1) >> (4-1))) % 16.U) ^ (((incol_0_0(2) << 2) | (incol_0_0(2) >> (4-2))) % 16.U) ^ (((incol_0_0(3) << 1) | (incol_0_0(3) >> (4-1))) % 16.U)
+//       outcol_0_0(1) := (((incol_0_0(0) << 1) | (incol_0_0(0) >> (4-1))) % 16.U) ^ (((incol_0_0(2) << 1) | (incol_0_0(2) >> (4-1))) % 16.U) ^ (((incol_0_0(3) << 2) | (incol_0_0(3) >> (4-2))) % 16.U)
+//       outcol_0_0(2) := (((incol_0_0(0) << 2) | (incol_0_0(0) >> (4-2))) % 16.U) ^ (((incol_0_0(1) << 1) | (incol_0_0(1) >> (4-1))) % 16.U) ^ (((incol_0_0(3) << 1) | (incol_0_0(3) >> (4-1))) % 16.U)
+//       outcol_0_0(3) := (((incol_0_0(0) << 1) | (incol_0_0(0) >> (4-1))) % 16.U) ^ (((incol_0_0(1) << 2) | (incol_0_0(1) >> (4-2))) % 16.U) ^ (((incol_0_0(2) << 1) | (incol_0_0(2) >> (4-1))) % 16.U)
+//
+//       outcol_0_1(0) := (((incol_0_1(1) << 1) | (incol_0_1(1) >> (4-1))) % 16.U) ^ (((incol_0_1(2) << 2) | (incol_0_1(2) >> (4-2))) % 16.U) ^ (((incol_0_1(3) << 1) | (incol_0_1(3) >> (4-1))) % 16.U)
+//       outcol_0_1(1) := (((incol_0_1(0) << 1) | (incol_0_1(0) >> (4-1))) % 16.U) ^ (((incol_0_1(2) << 1) | (incol_0_1(2) >> (4-1))) % 16.U) ^ (((incol_0_1(3) << 2) | (incol_0_1(3) >> (4-2))) % 16.U)
+//       outcol_0_1(2) := (((incol_0_1(0) << 2) | (incol_0_1(0) >> (4-2))) % 16.U) ^ (((incol_0_1(1) << 1) | (incol_0_1(1) >> (4-1))) % 16.U) ^ (((incol_0_1(3) << 1) | (incol_0_1(3) >> (4-1))) % 16.U)
+//       outcol_0_1(3) := (((incol_0_1(0) << 1) | (incol_0_1(0) >> (4-1))) % 16.U) ^ (((incol_0_1(1) << 2) | (incol_0_1(1) >> (4-2))) % 16.U) ^ (((incol_0_1(2) << 1) | (incol_0_1(2) >> (4-1))) % 16.U)
+//
+//       outcol_0_2(0) := (((incol_0_2(1) << 1) | (incol_0_2(1) >> (4-1))) % 16.U) ^ (((incol_0_2(2) << 2) | (incol_0_2(2) >> (4-2))) % 16.U) ^ (((incol_0_2(3) << 1) | (incol_0_2(3) >> (4-1))) % 16.U)
+//       outcol_0_2(1) := (((incol_0_2(0) << 1) | (incol_0_2(0) >> (4-1))) % 16.U) ^ (((incol_0_2(2) << 1) | (incol_0_2(2) >> (4-1))) % 16.U) ^ (((incol_0_2(3) << 2) | (incol_0_2(3) >> (4-2))) % 16.U)
+//       outcol_0_2(2) := (((incol_0_2(0) << 2) | (incol_0_2(0) >> (4-2))) % 16.U) ^ (((incol_0_2(1) << 1) | (incol_0_2(1) >> (4-1))) % 16.U) ^ (((incol_0_2(3) << 1) | (incol_0_2(3) >> (4-1))) % 16.U)
+//       outcol_0_2(3) := (((incol_0_2(0) << 1) | (incol_0_2(0) >> (4-1))) % 16.U) ^ (((incol_0_2(1) << 2) | (incol_0_2(1) >> (4-2))) % 16.U) ^ (((incol_0_2(2) << 1) | (incol_0_2(2) >> (4-1))) % 16.U)
+//
+//       outcol_0_3(0) := (((incol_0_3(1) << 1) | (incol_0_3(1) >> (4-1))) % 16.U) ^ (((incol_0_3(2) << 2) | (incol_0_3(2) >> (4-2))) % 16.U) ^ (((incol_0_3(3) << 1) | (incol_0_3(3) >> (4-1))) % 16.U)
+//       outcol_0_3(1) := (((incol_0_3(0) << 1) | (incol_0_3(0) >> (4-1))) % 16.U) ^ (((incol_0_3(2) << 1) | (incol_0_3(2) >> (4-1))) % 16.U) ^ (((incol_0_3(3) << 2) | (incol_0_3(3) >> (4-2))) % 16.U)
+//       outcol_0_3(2) := (((incol_0_3(0) << 2) | (incol_0_3(0) >> (4-2))) % 16.U) ^ (((incol_0_3(1) << 1) | (incol_0_3(1) >> (4-1))) % 16.U) ^ (((incol_0_3(3) << 1) | (incol_0_3(3) >> (4-1))) % 16.U)
+//       outcol_0_3(3) := (((incol_0_3(0) << 1) | (incol_0_3(0) >> (4-1))) % 16.U) ^ (((incol_0_3(1) << 2) | (incol_0_3(1) >> (4-2))) % 16.U) ^ (((incol_0_3(2) << 1) | (incol_0_3(2) >> (4-1))) % 16.U)
+//
+//       block_k1(0) := outcol_0_0(0)
+//       block_k1(1) := outcol_0_1(0)
+//       block_k1(2) := outcol_0_2(0)
+//       block_k1(3) := outcol_0_3(0)
+//       block_k1(4) := outcol_0_0(1)
+//       block_k1(5) := outcol_0_1(1)
+//       block_k1(6) := outcol_0_2(1)
+//       block_k1(7) := outcol_0_3(1)
+//       block_k1(8) := outcol_0_0(2)
+//       block_k1(9) := outcol_0_1(2)
+//       block_k1(10) := outcol_0_2(2)
+//       block_k1(11) := outcol_0_3(2)
+//       block_k1(12) := outcol_0_0(3)
+//       block_k1(13) := outcol_0_1(3)
+//       block_k1(14) := outcol_0_2(3)
+//       block_k1(15) := outcol_0_3(3)
+//
+//       block_k0_1(0) := block_k0(0) ^ alpha_block(0)
+//       block_k0_1(1) := block_k0(1) ^ alpha_block(1)
+//       block_k0_1(2) := block_k0(2) ^ alpha_block(2)
+//       block_k0_1(3) := block_k0(3) ^ alpha_block(3)
+//       block_k0_1(4) := block_k0(4) ^ alpha_block(4)
+//       block_k0_1(5) := block_k0(5) ^ alpha_block(5)
+//       block_k0_1(6) := block_k0(6) ^ alpha_block(6)
+//       block_k0_1(7) := block_k0(7) ^ alpha_block(7)
+//       block_k0_1(8) := block_k0(8) ^ alpha_block(8)
+//       block_k0_1(9) := block_k0(9) ^ alpha_block(9)
+//       block_k0_1(10) := block_k0(10) ^ alpha_block(10)
+//       block_k0_1(11) := block_k0(11) ^ alpha_block(11)
+//       block_k0_1(12) := block_k0(12) ^ alpha_block(12)
+//       block_k0_1(13) := block_k0(13) ^ alpha_block(13)
+//       block_k0_1(14) := block_k0(14) ^ alpha_block(14)
+//       block_k0_1(15) := block_k0(15) ^ alpha_block(15)
+//     }
+//
+//     //printf(p"block_w0:$block_w0\n block_w1:$block_w1\n block_k0_1:$block_k0_1\n block_k1:$block_k1\n block_plaintext:$block_plaintext\n block_tweak:$block_tweak\n")
+//     //k0 is now k0_1 from this point onwards.
+//
+//     block_state(0) := block_plaintext(0) ^ block_w0(0)
+//     block_state(1) := block_plaintext(1) ^ block_w0(1)
+//     block_state(2) := block_plaintext(2) ^ block_w0(2)
+//     block_state(3) := block_plaintext(3) ^ block_w0(3)
+//     block_state(4) := block_plaintext(4) ^ block_w0(4)
+//     block_state(5) := block_plaintext(5) ^ block_w0(5)
+//     block_state(6) := block_plaintext(6) ^ block_w0(6)
+//     block_state(7) := block_plaintext(7) ^ block_w0(7)
+//     block_state(8) := block_plaintext(8) ^ block_w0(8)
+//     block_state(9) := block_plaintext(9) ^ block_w0(9)
+//     block_state(10) := block_plaintext(10) ^ block_w0(10)
+//     block_state(11) := block_plaintext(11) ^ block_w0(11)
+//     block_state(12) := block_plaintext(12) ^ block_w0(12)
+//     block_state(13) := block_plaintext(13) ^ block_w0(13)
+//     block_state(14) := block_plaintext(14) ^ block_w0(14)
+//     block_state(15) := block_plaintext(15) ^ block_w0(15)
+//
+//     //printf(p"block_state:$block_state")
+//
+//     //5 loops. Here goes nothing.
+//     val module_CalcRoundTweakey_rounds0_0 = Module(new CalcRoundTweakey_0rounds())
+//     val module_CalcRoundTweakey_rounds1_0 = Module(new CalcRoundTweakey_1rounds())
+//     val module_CalcRoundTweakey_rounds2_0 = Module(new CalcRoundTweakey_2rounds())
+//     val module_CalcRoundTweakey_rounds3_0 = Module(new CalcRoundTweakey_3rounds())
+//     val module_CalcRoundTweakey_rounds4_0 = Module(new CalcRoundTweakey_4rounds())
+//
+//     val module_Round_rounds0_0 = Module(new Round_0rounds())
+//     val module_Round_rounds1_0 = Module(new Round())
+//     val module_Round_rounds2_0 = Module(new Round())
+//     val module_Round_rounds3_0 = Module(new Round())
+//     val module_Round_rounds4_0 = Module(new Round())
+//
+//     // loop iteration 1
+//     module_CalcRoundTweakey_rounds0_0.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds0_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds0_0.io.backwards := false.B
+//     //printf(p"tweakey 1: ${Hexadecimal(module_CalcRoundTweakey_rounds0_0.io.output)}\n")
+//
+//     module_Round_rounds0_0.io.state := (block_state(0) << (15-0)*4) + (block_state(1) << (15-1)*4) + (block_state(2) << (15-2)*4) + (block_state(3) << (15-3)*4) + (block_state(4) << (15-4)*4) + (block_state(5) << (15-5)*4) + (block_state(6) << (15-6)*4) + (block_state(7) << (15-7)*4) + (block_state(8) << (15-8)*4) + (block_state(9) << (15-9)*4) + (block_state(10) << (15-10)*4) + (block_state(11) << (15-11)*4) + (block_state(12) << (15-12)*4) + (block_state(13) << (15-13)*4) + (block_state(14) << (15-14)*4) + (block_state(15) << (15-15)*4)
+//     module_Round_rounds0_0.io.tweakey := module_CalcRoundTweakey_rounds0_0.io.output
+//     module_Round_rounds0_0.io.backwards := false.B
+//     //printf(p"round 1: ${Hexadecimal(module_Round_rounds0_0.io.round_state)}\n")
+//
+//     //loop iteration 2
+//     module_CalcRoundTweakey_rounds1_0.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds1_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds1_0.io.backwards := false.B
+//     //printf(p"tweakey 2: ${Hexadecimal(module_CalcRoundTweakey_rounds1_0.io.output)}\n")
+//
+//     module_Round_rounds1_0.io.state := module_Round_rounds0_0.io.round_state
+//     module_Round_rounds1_0.io.tweakey := module_CalcRoundTweakey_rounds1_0.io.output
+//     module_Round_rounds1_0.io.backwards := false.B
+//     //printf(p"round 2: ${Hexadecimal(module_Round_rounds1_0.io.round_state)}\n")
+//
+//     //loop iteration 3
+//     module_CalcRoundTweakey_rounds2_0.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds2_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds2_0.io.backwards := false.B
+//     //printf(p"tweakey 3: ${Hexadecimal(module_CalcRoundTweakey_rounds2_0.io.output)}\n")
+//
+//     module_Round_rounds2_0.io.state := module_Round_rounds1_0.io.round_state
+//     module_Round_rounds2_0.io.tweakey := module_CalcRoundTweakey_rounds2_0.io.output
+//     module_Round_rounds2_0.io.backwards := false.B
+//     //printf(p"round 3: ${Hexadecimal(module_Round_rounds2_0.io.round_state)}\n")
+//
+//     //loop iteration 4
+//     module_CalcRoundTweakey_rounds3_0.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds3_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds3_0.io.backwards := false.B
+//     //printf(p"tweakey 4: ${Hexadecimal(module_CalcRoundTweakey_rounds3_0.io.output)}\n")
+//
+//     module_Round_rounds3_0.io.state := module_Round_rounds2_0.io.round_state
+//     module_Round_rounds3_0.io.tweakey := module_CalcRoundTweakey_rounds3_0.io.output
+//     module_Round_rounds3_0.io.backwards := false.B
+//     //printf(p"round 4: ${Hexadecimal(module_Round_rounds3_0.io.round_state)}\n")
+//
+//     interim_state_reg1 := module_Round_rounds3_0.io.round_state
+//
+//     //loop iteration 5
+//     module_CalcRoundTweakey_rounds4_0.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds4_0.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds4_0.io.backwards := false.B
+//     //printf(p"tweakey 5: ${Hexadecimal(module_CalcRoundTweakey_rounds4_0.io.output)}\n")
+//
+//     // module_Round_rounds4_0.io.state := module_Round_rounds3_0.io.round_state
+//     module_Round_rounds4_0.io.state := interim_state_reg1
+//     module_Round_rounds4_0.io.tweakey := module_CalcRoundTweakey_rounds4_0.io.output
+//     module_Round_rounds4_0.io.backwards := false.B
+//     //printf(p"round 5: ${Hexadecimal(module_Round_rounds4_0.io.round_state)}\n")
+//
+//
+//     // good upto this point
+//     //printf(p"state: ${module_Round_rounds4_0.io.round_state}\n")
+//     val module_CalcTweak_middle = Module(new CalcTweak_5rounds())
+//     val module_Round_middle_0 = Module(new Round())
+//     val module_MiddleRound = Module(new MiddleRound())
+//     val module_Round_middle_1 = Module(new Round())
+//
+//
+//     module_CalcTweak_middle.io.tweak :=  io.tweak
+//
+//
+//     module_Round_middle_0.io.state := module_Round_rounds4_0.io.round_state
+//     module_Round_middle_0.io.tweakey := module_CalcTweak_middle.io.tweak_r ^ ((block_w1(0) << (15-0)*4) + (block_w1(1) << (15-1)*4) + (block_w1(2) << (15-2)*4) + (block_w1(3) << (15-3)*4) + (block_w1(4) << (15-4)*4) + (block_w1(5) << (15-5)*4) + (block_w1(6) << (15-6)*4) + (block_w1(7) << (15-7)*4) + (block_w1(8) << (15-8)*4) + (block_w1(9) << (15-9)*4) + (block_w1(10) << (15-10)*4) + (block_w1(11) << (15-11)*4) + (block_w1(12) << (15-12)*4) + (block_w1(13) << (15-13)*4) + (block_w1(14) << (15-14)*4) + (block_w1(15) << (15-15)*4))
+//     module_Round_middle_0.io.backwards := false.B
+//
+//     module_MiddleRound.io.state := module_Round_middle_0.io.round_state
+//     module_MiddleRound.io.k1 := (block_k1(0) << (15-0)*4) + (block_k1(1) << (15-1)*4) + (block_k1(2) << (15-2)*4) + (block_k1(3) << (15-3)*4) + (block_k1(4) << (15-4)*4) + (block_k1(5) << (15-5)*4) + (block_k1(6) << (15-6)*4) + (block_k1(7) << (15-7)*4) + (block_k1(8) << (15-8)*4) + (block_k1(9) << (15-9)*4) + (block_k1(10) << (15-10)*4) + (block_k1(11) << (15-11)*4) + (block_k1(12) << (15-12)*4) + (block_k1(13) << (15-13)*4) + (block_k1(14) << (15-14)*4) + (block_k1(15) << (15-15)*4)
+//
+//     module_Round_middle_1.io.state := module_MiddleRound.io.middleround_state
+//     module_Round_middle_1.io.tweakey := module_CalcTweak_middle.io.tweak_r ^ ((block_w0(0) << (15-0)*4) + (block_w0(1) << (15-1)*4) + (block_w0(2) << (15-2)*4) + (block_w0(3) << (15-3)*4) + (block_w0(4) << (15-4)*4) + (block_w0(5) << (15-5)*4) + (block_w0(6) << (15-6)*4) + (block_w0(7) << (15-7)*4) + (block_w0(8) << (15-8)*4) + (block_w0(9) << (15-9)*4) + (block_w0(10) << (15-10)*4) + (block_w0(11) << (15-11)*4) + (block_w0(12) << (15-12)*4) + (block_w0(13) << (15-13)*4) + (block_w0(14) << (15-14)*4) + (block_w0(15) << (15-15)*4))
+//     module_Round_middle_1.io.backwards := true.B
+//
+//     //inverted loop. starts from 5 and goes to 1
+//
+//     val module_CalcRoundTweakey_rounds0_1 = Module(new CalcRoundTweakey_0rounds())
+//     val module_CalcRoundTweakey_rounds1_1 = Module(new CalcRoundTweakey_1rounds())
+//     val module_CalcRoundTweakey_rounds2_1 = Module(new CalcRoundTweakey_2rounds())
+//     val module_CalcRoundTweakey_rounds3_1 = Module(new CalcRoundTweakey_3rounds())
+//     val module_CalcRoundTweakey_rounds4_1 = Module(new CalcRoundTweakey_4rounds())
+//
+//     val module_Round_rounds0_1 = Module(new Round_0rounds())
+//     val module_Round_rounds1_1 = Module(new Round())
+//     val module_Round_rounds2_1 = Module(new Round())
+//     val module_Round_rounds3_1 = Module(new Round())
+//     val module_Round_rounds4_1 = Module(new Round())
+//
+//     // loop iteration 5
+//     module_CalcRoundTweakey_rounds4_1.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds4_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds4_1.io.backwards := true.B
+//
+//     module_Round_rounds4_1.io.state := module_Round_middle_1.io.round_state
+//     module_Round_rounds4_1.io.tweakey := module_CalcRoundTweakey_rounds4_1.io.output
+//     module_Round_rounds4_1.io.backwards := true.B
+//
+//     //loop iteration 4
+//     module_CalcRoundTweakey_rounds3_1.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds3_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds3_1.io.backwards := true.B
+//
+//     module_Round_rounds3_1.io.state := module_Round_rounds4_1.io.round_state
+//     module_Round_rounds3_1.io.tweakey := module_CalcRoundTweakey_rounds3_1.io.output
+//     module_Round_rounds3_1.io.backwards := true.B
+//
+//     //loop iteration 3
+//     module_CalcRoundTweakey_rounds2_1.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds2_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds2_1.io.backwards := true.B
+//
+//     module_Round_rounds2_1.io.state := module_Round_rounds3_1.io.round_state
+//     module_Round_rounds2_1.io.tweakey := module_CalcRoundTweakey_rounds2_1.io.output
+//     module_Round_rounds2_1.io.backwards := true.B
+//
+//     interim_state_reg2 := module_Round_rounds2_1.io.round_state
+//
+//     //loop iteration 2
+//     module_CalcRoundTweakey_rounds1_1.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds1_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds1_1.io.backwards := true.B
+//
+//     // module_Round_rounds1_1.io.state := module_Round_rounds2_1.io.round_state
+//     module_Round_rounds1_1.io.state := interim_state_reg2
+//     module_Round_rounds1_1.io.tweakey := module_CalcRoundTweakey_rounds1_1.io.output
+//     module_Round_rounds1_1.io.backwards := true.B
+//
+//     //loop iteration 1
+//     module_CalcRoundTweakey_rounds0_1.io.tweak := io.tweak
+//     module_CalcRoundTweakey_rounds0_1.io.k0 := (block_k0_1(0) << (15-0)*4) + (block_k0_1(1) << (15-1)*4) + (block_k0_1(2) << (15-2)*4) + (block_k0_1(3) << (15-3)*4) + (block_k0_1(4) << (15-4)*4) + (block_k0_1(5) << (15-5)*4) + (block_k0_1(6) << (15-6)*4) + (block_k0_1(7) << (15-7)*4) + (block_k0_1(8) << (15-8)*4) + (block_k0_1(9) << (15-9)*4) + (block_k0_1(10) << (15-10)*4) + (block_k0_1(11) << (15-11)*4) + (block_k0_1(12) << (15-12)*4) + (block_k0_1(13) << (15-13)*4) + (block_k0_1(14) << (15-14)*4) + (block_k0_1(15) << (15-15)*4)
+//     module_CalcRoundTweakey_rounds0_1.io.backwards := true.B
+//
+//     module_Round_rounds0_1.io.state := module_Round_rounds1_1.io.round_state
+//     module_Round_rounds0_1.io.tweakey := module_CalcRoundTweakey_rounds0_1.io.output
+//     module_Round_rounds0_1.io.backwards := true.B
+//
+//
+//     io.ciphertext := module_Round_rounds0_1.io.round_state ^ ((block_w1(0) << (15-0)*4) + (block_w1(1) << (15-1)*4) + (block_w1(2) << (15-2)*4) + (block_w1(3) << (15-3)*4) + (block_w1(4) << (15-4)*4) + (block_w1(5) << (15-5)*4) + (block_w1(6) << (15-6)*4) + (block_w1(7) << (15-7)*4) + (block_w1(8) << (15-8)*4) + (block_w1(9) << (15-9)*4) + (block_w1(10) << (15-10)*4) + (block_w1(11) << (15-11)*4) + (block_w1(12) << (15-12)*4) + (block_w1(13) << (15-13)*4) + (block_w1(14) << (15-14)*4) + (block_w1(15) << (15-15)*4))
+//
+//
+//     //printf(p"block_w0_later:$block_w0\n block_w1_later:$block_w1\n")
+//     //io.ciphertext := RegNext(io.plaintext) //temporary just to check the module
+// }
