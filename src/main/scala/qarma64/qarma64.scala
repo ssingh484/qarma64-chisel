@@ -2111,7 +2111,7 @@ val io = IO(new Bundle {
     val tweak_in = RegInit(0.U(64.W))
     val w0_in = RegInit(0.U(64.W))
     val k0_in = RegInit(0.U(64.W))
-    val encryption_in = RegInit(0.U(64.W))
+    val encryption_in = RegInit(Bool())
     val w1 = RegInit(UInt(64.W))
 
     val alpha_block = RegInit(VecInit(12.U(64.W), 0.U(64.W), 10.U(64.W), 12.U(64.W), 2.U(64.W), 9.U(64.W), 11.U(64.W), 7.U(64.W), 12.U(64.W), 9.U(64.W), 7.U(64.W), 12.U(64.W), 5.U(64.W), 0.U(64.W), 13.U(64.W), 13.U(64.W)))
