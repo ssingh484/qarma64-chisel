@@ -2152,7 +2152,7 @@ val io = IO(new Bundle {
     tweak_in := io.tweak
     w0_in := io.w0
     k0_in := io.k0
-    encryption_in := io.encryption.asUint()
+    encryption_in := io.encryption.asUInt()
     w1 := ((io.w0 >> 1) | ((io.w0 & 1.U(64.W)) << 63)) ^ (io.w0 >> 63)
 
     for (j <- 0 to 15) //hex to block
